@@ -24,6 +24,34 @@
 -- 12=Pin U2-30 (GPIO 14)
 
 
+-- Notes on why ports 7 and 8:
+--
+-- Port 7 is differential.  Those do NOT work properly.  So if you open 7 that could break
+-- everything if you then try to work with 8 or vice-versa.  Also, ADC input 8 uses one of the two
+-- pins needed by ADC input 7 (they share pins).  So you can’t open both at the same time.  
+-- ST’s mux is a bit confusing. 
+--
+-- 	From the comments you can see that port 7 and 8 both use ADC2_In5_N:
+-- 	  7=Pin U1-13 (ADC2_In5_P) / Pin U1-14 (**ADC2_In5_N**) Differential
+-- 	  8=Pin U1-14 (**ADC2_In5_N**)
+
+-- 	ST really didn’t design the ADC to be really flexible in accessing ports like Lua would permit.  
+--  Basically you have 3 ADC’s and depending on what you try to do, you can get different “ports”
+--  to interfere with each-other (ie, you cannot have both single ended and differential open on
+--  the same ADC at the same time or have 2 inputs on the same ADC with different timing params).  
+--  This is going to be handled by adding error handling to prevent a customer from doing this 
+--  (throwing an error) but I have not decided on the exact implementation yet in the code.
+-- 	Additionally, with the differential pins, I have to “reserve” two pins (rather than one) when
+--  you open the port and make sure both are currently avail.  I it is handled in the code but 
+--  it’s not well-tested yet.  (Remember that for many of these pins [and it’s chip specific, so 
+--  the SE2023 is different], the pins have multiple purposes.  Part of the reason for “Open” 
+--  functions is to reserve the pin and make sure no other function is already using it, etc)
+--	
+-- 	There is an ADCClose() function too (not in this example) that releases the ADC pins for
+--  re-use as other things, etc.
+
+
+-- ADC Global Variables
 ADC_StartPort = 0
 ADC_StopPort = 12
 ADC_Ports = ADC_StopPort + 1
